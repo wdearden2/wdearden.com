@@ -18,7 +18,7 @@ canonifyurls = true
   name = "Will Dearden"
   job = "Data Scientist at Uptake"
   location = "Chicago"
-  picture = "https://scontent.ford1-1.fna.fbcdn.net/v/t1.0-9/17155165_1798009923558303_7409649885080773860_n.jpg?oh=f7f09b0ffc36e45d350d11b861e48cec&oe=5B1A2120"
+  picture = "https://media-exp2.licdn.com/mpr/mpr/shrinknp_400_400/AAIABADGAAAAAQAAAAAAAAxtAAAAJGRkMTI2MDJiLTA1YzEtNDJlYi04ZjNjLTA5MGQzMTI3NDc4Ng.jpg"
 
 # Menu Configuration
 [[menu.main]]
