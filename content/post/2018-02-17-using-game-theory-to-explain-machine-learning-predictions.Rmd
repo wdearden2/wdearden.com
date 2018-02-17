@@ -1,0 +1,9 @@
+---
+title: Using game theory to explain machine learning predictions
+author: Will Dearden
+date: '2018-02-17'
+slug: using-game-theory-to-explain-machine-learning-predictions
+categories: ['R']
+tags: ['machine learning', 'game theory', 'shapley value']
+---
+
