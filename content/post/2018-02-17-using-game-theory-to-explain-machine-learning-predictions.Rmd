@@ -7,3 +7,29 @@ categories: ['R']
 tags: ['machine learning', 'game theory', 'shapley value']
 ---
 
+```{r setup, include=FALSE}
+library(randomNames)
+library(dplyr)
+library(stringr)
+library(purrr)
+
+set.seed(4)
+```
+
+_In this post, I explain the Shapley value from cooperative machine learning and how it can be used to explain machine learning predictions._
+
+```{r names, include=FALSE}
+friends <- randomNames(3) %>% str_extract(pattern = "(?<=, ).*$")
+
+format_list <- function(str) {
+    str %>%
+        paste0(collapse = ", ") %>%
+        str_replace(pattern = "(?<=, )(?=[^,]*$)", replacement = "and ")
+}
+```
+
+## The Shapley Value
+
+Let's say you and your friends `r format_list(friends)` [^1] are splitting an Uber. You live closest to the origin. `r friends[1]` and `r friends[2]` live together just a few blocks farther and `r friends[3]` lives the farthest away. `r friends[3]` suggests that Uber has a handy built-in [fare splitter](https://help.uber.com/h/2ccba301-152e-4747-b207-e4281a1a2ba5) which will split the fare evenly between all of you
+
+[^1]: I don't know who you are so I generated your friends' names with the [randomNames](https://github.com/CenterForAssessment/randomNames) package.
