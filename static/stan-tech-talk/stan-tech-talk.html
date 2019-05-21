@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Intro to Stan</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Will Dearden" />
+    <meta name="date" content="2018-08-31" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Intro to Stan
+### Will Dearden
+### 2019-05-15
+
+---
+
+
+
+
+# What is Stan?
+
+Stan is a probabilistic programming language for Bayesian statistical inference written in C++.
+
+--
+
+Wrappers for other languages:
+
+* PyStan - Python
+* RStan - R
+* CmdStan - command line
+
+---
+
+# Refresher: Bayesian inference
+
+* Vector of parameters `\(\theta\)` and data `\(y\)`.
+--
+
+* Goal: Develop a model `\(p(y, \theta)\)` to arrive at `\(p(\theta|y)\)`.
+--
+
+* Tool: Bayes' rule
+`$$p(\theta|y) = \frac{p(y, \theta)}{p(y)} = \frac{p(y|\theta)p(\theta)}{p(y)} \propto p(y|\theta)p(\theta)$$`
+--
+
+* `\(p(\theta|y)\)` is what we learn from the data, aka the posterior distribution.
+--
+
+* `\(p(y|\theta)\)` is the likelihood function. This is the model.
+--
+
+* `\(p(\theta)\)` is our prior distribution. It's what believe about the parameters before we look at the data.
+
+---
+
+# Sometimes it's easy
+
+Binomial model
+--
+
+* `\(\theta\)` is the unknown probability of a binary event.
+--
+
+* `\(y_i \in \{0, 1\}\)` for `\(i \in \{1, 2, \ldots n\}\)`
+--
+
+* `\(y = \sum_{i=1}^n y_i\)`
+--
+
+* Likelihood - two different ways ways (Bernoulli or binomial)
+
+$$ p(y_i|\theta) = \theta$$
+$$ p(y|\theta) = {n \choose y} \theta^y (1 - \theta)^{n - y}$$
+--
+
+* Prior - beta distribution - `\(Beta(\alpha, \beta)\)`
+
+$$ p(\theta) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\Gamma(\beta)} \theta^{\alpha - 1}(1 - \theta)^{\beta - 1}$$
+--
+
+* Posterior - updated beta - `\(Beta(y + \alpha, n - y + \beta)\)`
+$$ p(\theta|y) \propto \theta^{y + \alpha - 1}(1 - \theta)^{n - y + \beta - 1}$$
+
+---
+
+# Bayesian statistics vs. frequentist statistics vs. machine learning
+
+Frequentist inference
+--
+
+* 95% confidence interval - There is a 95% probability that the calculated confidence interval from an experiment contains `\(\theta\)`, the population parameter.
+--
+
+* How do we interpret that?
+--
+
+* Tools: Fisher exact test, two sided t-test, ANOVA, MANOVA, etc.
+
+--
+
+Machine learning (in this case predictive analytics)
+--
+
+* Great for conditional expectations, aka predictions ... what is the probability this locomotive with these signals will break down in the next two weeks?
+--
+
+* Not intended for inference ... what was the effect of this class on SAT scores and can we quantify our uncertainty? How much faster is the North Platte shop than the Omaha shop at repairing locomotives while adjusting for the types of locomotives each shop receives?
+
+---
+
+# More complex models don't have elegant solutions
+--
+
+* Examples where the prior and posterior come from the same family of distributions are called conjugate priors.
+--
+
+* Very easy to update posterior with data
+--
+
+* When `\(\theta\)` is high dimensional this isn't possible or the prior and posterior aren't conjugate this isn't possible
+
+---
+
+# Bayesian algorithms
+--
+
+Algorithms sample from the posterior distribution.
+--
+
+* Metropolis-Hastings
+
+--
+
+Sample a point `\(x'\)` from a normal distribution centered around the current point, `\(x\)`. `\(\sigma\)` in the normal distrubtion is the "step size".
+
+--
+
+Accept the point with a given probability:
+
+`$$A(x', x) = min\left(1, \frac{P(x')}{P(x)}\right)$$`
+--
+
+Samples form a Markov Chain with steady state distribution equal to `\(P\)`.
+
+--
+Suffers from curse of dimensionality. As the number of dimensions grows, a step size of `\(\sigma\)` covers an exponentionally smaller proportion of the parameter space.
+
+--
+
+* Hamiltonian Monte Carlo
+
+--
+
+* No U-Turn Sampler
+
+--
+
+* Automatic Differentiation Variational Inference
+
+---
+
+# On to Stan
+
+Stan is a language for writing down the data, priors, and likelihood function.
+
+
+```stan
+data { 
+    int&lt;lower=0&gt; N; 
+    int&lt;lower=0, upper=1&gt; y[N];
+    real&lt;lower=0&gt; alpha;
+    real&lt;lower=0&gt; beta;
+} 
+parameters {
+    real&lt;lower=0, upper=1&gt; theta;
+} 
+model {
+    theta ~ beta(alpha, beta);
+    y ~ bernoulli(theta);
+}
+
+```
+
+---
+
+# Six blocks of Stan
+
+```
+data
+
+transformed data
+
+parameters
+
+transformed parameters
+
+model
+
+generated quantities
+```
+
+---
+
+# `data`
+
+The "data" block reads external information
+
+
+```stan
+data { 
+    int&lt;lower=0&gt; N; 
+    int&lt;lower=0, upper=1&gt; y[N];
+    real&lt;lower=0&gt; alpha;
+    real&lt;lower=0&gt; beta;
+}
+```
+
+---
+
+# `data`
+
+The "transformed data" block allows for preprocessing of the data
+
+
+```stan
+transformed data {
+    int&lt;lower=0&gt; sum_y = sum(y);
+}
+```
+
+---
+
+# `parameters`
+
+The "parameters" block defines the sampling space
+
+
+```stan
+parameters { 
+    real&lt;lower=0, upper=1&gt; theta;
+}
+```
+
+---
+
+# `transformed parameters`
+
+The "transformed parameters" block allows for parameter processing before the posterior is computed.
+
+--
+
+Useful when you have parameters which are better for sampling but you want to infer other parameters.
+
+--
+
+`\(\phi\)` represents the mean and `\(\lambda\)` represents the "total count".
+
+
+```stan
+parameters {
+    real&lt;lower=0, upper=1&gt; phi;
+    real&lt;lower=0.1&gt; lambda;
+    ...
+transformed parameters {
+    real&lt;lower=0&gt; alpha;
+    real&lt;lower=0&gt; beta;
+    ...
+    alpha = lambda * phi;
+    beta = lambda * (1 - phi);
+    ...
+```
+
+---
+
+# `model`
+
+In the model, we define the priors and likehood function
+
+
+```stan
+model {
+    theta ~ beta(alpha, beta);
+    y ~ bernoulli(theta);
+}
+```
+
+--
+
+or
+
+
+```stan
+model {
+    theta ~ beta(alpha, beta);
+    sum(y) ~ binomial(N, theta);
+}
+```
+
+--
+
+or 
+
+
+```stan
+model {
+    theta ~ beta(alpha + sum_y, beta + N - sum_y);
+}
+```
+
+---
+
+# `generated quantities`
+
+The "generated quantities" block allows for postprocessing
+
+
+```stan
+generated quantities {
+    int&lt;lower=0, upper=N&gt; sum_y_hat;
+    sum_y_hat = binomial_rng(N, theta);
+}
+```
+
+---
+
+# Properties of Stan
+--
+
+* Statically typed
+--
+
+* Can have lower and upper bounds
+--
+
+* Other objects built on top
+
+
+```stan
+vector[10] a;
+matrix[10, 1] b;
+row_vector[10] c;
+vector[10] b[10];
+
+simplex[5] theta;
+ordered[5] o;
+...
+```
+---
+
+# Properties of Stan
+
+* Has control flow and iteration
+
+
+```stan
+if/then/else
+for (i in 1:I)
+while (i &lt; I)
+```
+
+--
+
+* Vectorized statements
+
+
+```stan
+model {
+    theta ~ beta(alpha, beta);
+    y ~ bernoulli(theta);
+}
+```
+
+---
+
+# Running Stan from R
+
+
+```stan
+data {
+    int&lt;lower=0&gt; N;
+    int&lt;lower=0, upper=1&gt; y[N];
+    real&lt;lower=0&gt; alpha;
+    real&lt;lower=0&gt; beta;
+}
+parameters {
+    real&lt;lower=0,upper=1&gt; theta;
+}
+model {
+    theta ~ beta(alpha, beta);
+    sum(y) ~ binomial(N, theta);
+}
+generated quantities {
+    int&lt;lower=0, upper=N&gt; sum_y_hat;
+    real&lt;lower=0, upper=N&gt; sum_y_hat_real;
+    real&lt;lower=0, upper=1&gt; pct_success;
+    sum_y_hat = binomial_rng(N, theta);
+    sum_y_hat_real = sum_y_hat;
+    pct_success = sum_y_hat_real / N;
+}
+```
+
+---
+
+# Running Stan from R
+
+
+```r
+library(rstan)
+
+s &lt;- 20
+N &lt;- 60
+y &lt;- c(rep(1, s), rep(0, N - s))
+
+dat &lt;- list(N = N, y = y, alpha = 1, beta = 1)
+
+fit &lt;- sampling(
+    object = ex1
+    , data = dat
+    , iter = 1000
+    , chains = 4
+)
+```
+
+---
+
+# Running Stan from R
+
+
+```r
+print(fit, digits = 3, pars = c('theta', 'sum_y_hat', 'pct_success'), probs = c(0.1, 0.5, 0.9))
+```
+
+```
+## Inference for Stan model: b2c164fa2ebda315c394bf467efabd8b.
+## 4 chains, each with iter=1000; warmup=500; thin=1; 
+## post-warmup draws per chain=500, total post-warmup draws=2000.
+## 
+##               mean se_mean    sd    10%    50%    90% n_eff  Rhat
+## theta        0.337   0.002 0.059  0.261  0.336  0.415   723 1.007
+## sum_y_hat   20.241   0.157 5.166 14.000 20.000 27.000  1087 1.004
+## pct_success  0.337   0.003 0.086  0.233  0.333  0.450  1087 1.004
+## 
+## Samples were drawn using NUTS(diag_e) at Fri Aug 31 13:55:23 2018.
+## For each parameter, n_eff is a crude measure of effective sample size,
+## and Rhat is the potential scale reduction factor on split chains (at 
+## convergence, Rhat=1).
+```
+
+---
+
+# Diagnostics in R
+
+
+```r
+traceplot(fit, pars = "theta", inc_warmup = TRUE)
+```
+
+![](stan-tech-talk_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
+
+---
+
+# Hierarchical models in Stan
+
+--
+
+Who's the best batter in baseball?
+
+
+
+
+```r
+arrange(career, desc(average), desc(AB))
+```
+
+```
+## # A tibble: 9,509 x 4
+##    name                 H    AB average
+##    &lt;chr&gt;            &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;
+##  1 John Paciorek        3     3       1
+##  2 Steve Biras          2     2       1
+##  3 Mike Hopkins         2     2       1
+##  4 Jeff Banister        1     1       1
+##  5 Doc Bass             1     1       1
+##  6 C. B. Burns          1     1       1
+##  7 Jackie Gallagher     1     1       1
+##  8 Roy Gleason          1     1       1
+##  9 Steve Kuczek         1     1       1
+## 10 Dave Liddell         1     1       1
+## # ... with 9,499 more rows
+```
+
+--
+
+That can't be right
+
+---
+
+# Let's model this
+
+`$$\theta_i \sim Beta(1, 1)$$`
+
+`$$H_i \sim Binom(AB_i, \theta_i)$$`
+
+
+```stan
+data {
+    int&lt;lower=0&gt; N; // Num. of observations
+    int&lt;lower=0&gt; H[N]; // Hits
+    int&lt;lower=0&gt; AB[N]; // At bats
+}
+parameters {
+    vector&lt;lower=0, upper=1&gt;[N] theta; // chance of success
+}
+model {
+    theta ~ beta(1, 1);
+    H ~ binomial(AB, theta);
+}
+```
+
+---
+
+# The Result
+
+John Paciorek is still the best batter in baseball with 3 hits in 3 at-bats.
+
+![](stan-tech-talk_files/figure-html/unnamed-chunk-20-1.png)&lt;!-- --&gt;
+
+---
+
+# The Other Extreme
+
+What if we pool all the players together
+
+`$$\theta \sim Beta(1, 1)$$`
+
+`$$H_i \sim Binom(AB_i, \theta)$$`
+
+
+```stan
+data {
+    int&lt;lower=0&gt; N; // Num. of observations
+    int&lt;lower=0&gt; H[N]; // Hits
+    int&lt;lower=0&gt; AB[N]; // At bats
+}
+parameters {
+    real&lt;lower=0, upper=1&gt; theta; // chance of success
+}
+model {
+    theta ~ beta(1, 1);
+    H ~ binomial(AB, theta);
+}
+```
+
+---
+
+# The Other Extreme
+
+
+```
+## Inference for Stan model: bae773368e792cb5b02fd3cd30a7d7eb.
+## 4 chains, each with iter=1000; warmup=500; thin=1; 
+## post-warmup draws per chain=500, total post-warmup draws=2000.
+## 
+##               mean se_mean    sd         2.5%          50%        97.5%
+## theta        0.267   0.000 0.000        0.266        0.267        0.267
+## lp__  -7082090.997   0.024 0.716 -7082093.064 -7082090.727 -7082090.488
+##       n_eff  Rhat
+## theta   907 1.004
+## lp__    902 1.003
+## 
+## Samples were drawn using NUTS(diag_e) at Fri Aug 31 14:04:01 2018.
+## For each parameter, n_eff is a crude measure of effective sample size,
+## and Rhat is the potential scale reduction factor on split chains (at 
+## convergence, Rhat=1).
+```
+
+---
+
+# Is there a middle ground?
+
+We know the overall batting average is around 27%. If a player has very few at-bats, we should adjust their batting average to much closer to 27%. We want a model which learns the overall percent and adjust based on the player's number of at-bats.
+
+--
+
+So, we instead of having a `\(Beta(1, 1)\)` prior for `\(\theta_i\)` we want to learn a better parameters than (1,1).
+
+--
+
+$$ \kappa \sim pareto(1, 0.5)$$
+$$ \phi \sim U(0, 1)$$
+$$ \theta_i \sim Beta(\phi \cdot \kappa, (1 - \phi) \cdot \kappa)$$
+
+$$ H_i \sim Binom(AB_i, \theta_i) $$
+
+---
+
+# The Stan Model
+
+
+```stan
+data {
+    int&lt;lower=0&gt; N; // Num. of observations
+    int&lt;lower=0&gt; H[N]; // Hits
+    int&lt;lower=0&gt; AB[N]; // At bats
+}
+parameters {
+    real&lt;lower=0, upper=1&gt; phi;         // population chance of success
+    real&lt;lower=1&gt; kappa;                // population concentration
+    vector&lt;lower=0, upper=1&gt;[N] theta;  // chance of success 
+}
+model {
+    kappa ~ pareto(1, 0.5);                        // hyperprior
+    theta ~ beta(phi * kappa, (1 - phi) * kappa);  // prior
+    H ~ binomial(AB, theta);                        // likelihood
+}
+```
+
+---
+
+# Results
+
+![](stan-tech-talk_files/figure-html/unnamed-chunk-24-1.png)&lt;!-- --&gt;
+
+---
+
+# Results
+
+
+
+
+```r
+career_adjusted %&gt;%
+    arrange(desc(adj_average))
+```
+
+```
+## # A tibble: 9,509 x 5
+##    name                     H    AB average adj_average
+##    &lt;chr&gt;                &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;       &lt;dbl&gt;
+##  1 Rogers Hornsby        2930  8173   0.358       0.355
+##  2 Shoeless Joe Jackson  1772  4981   0.356       0.350
+##  3 Ed Delahanty          2596  7505   0.346       0.342
+##  4 Billy Hamilton        2158  6268   0.344       0.340
+##  5 Willie Keeler         2932  8591   0.341       0.338
+##  6 Harry Heilmann        2660  7787   0.342       0.338
+##  7 Bill Terry            2193  6428   0.341       0.337
+##  8 Lou Gehrig            2721  8001   0.340       0.337
+##  9 Nap Lajoie            3242  9589   0.338       0.335
+## 10 Tony Gwynn            3141  9288   0.338       0.335
+## # ... with 9,499 more rows
+```
+
+---
+
+# Packages which use Stan
+
+--
+
+* `shinystan` - great for diagnosing and visualizing your model
+
+--
+
+* `rstanarm` - emulates other R models like `lm`, `glm`, and `lmer` but running a compiled Stan model.
+
+--
+
+* `brms` - multilevel models in R
+
+--
+
+* `prophet` - time series forecasting
+
+---
+
+# Stan is a leaky abstraction
+
+--
+
+The idea behind Stan is you write your model in a portable language. You don't need to write code to fit the model. All you need is data, priors, and likelihoods.
+
+--
+
+However, these sampling algorithms can have a lot of trouble sampling certain parameter spaces and the model may take a really long time or never converge.
+
+--
+
+Learning certain best practices can help models fit a lot faster.
+
+---
+
+# Avoid highly correlated parameters
+
+
+```stan
+parameters {
+    real y;
+    vector[9] x;
+}
+model {
+    y ~ normal(0, 3);
+    x ~ normal(0, exp(y/2));
+}
+```
+
+![](img/neals_funnel.jpeg)
+
+---
+
+# Avoid highly correlated parameters
+
+
+```stan
+parameters {
+    real y_raw;
+    vector[9] x_raw;
+}
+transformed parameters {
+    real y;
+    vector[9] x;
+    y = 3.0 * y_raw;
+    x = exp(y/2) * x_raw;
+}
+model {
+    y_raw ~ normal(0, 1); // implies y ~ normal(0, 3)
+    x_raw ~ normal(0, 1); // implies x ~ normal(0, exp(y/2))
+}
+```
+
+--
+
+A related example is using non-centered parameterizations.
+
+---
+
+# Take advantage of conjugate priors
+
+See the beta and binomial examples above
+
+--
+
+# Take advantage of sufficient statistics
+
+See the same beta and binomial example
+
+--
+
+# Vectorize
+
+---
+
+# The folk theorem of statistical computing
+
+&gt; When you have computational problems, often there’s a problem with your model
+&gt; - Andrew Gelman
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

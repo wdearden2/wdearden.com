@@ -1,8 +1,7 @@
 ---
 authors:
 - admin
-bio: My research interests include distributed robotics, mobile computing and programmable
-  matter.
+bio: Data scientist at Uptake
 education:
   courses:
   - course: MS in Managerial Economics and Strategy
