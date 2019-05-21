@@ -9,7 +9,7 @@ event_url: https://www.meetup.com/Chicago-R-User-Group/events/261214981/
 featured: false
 location: Chicago, IL
 math: true
-publishDate: "2019-05-20T20:00:00Z"
+publishDate: "2019-05-21T01:00:00Z"
 
 summary: An introduction to Stan and an example of a hierarchical model with baseball data.
 tags: []
