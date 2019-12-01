@@ -1,6 +1,6 @@
 ---
 abstract: >
-    I gave a guest lecture at Brian Davidson's Intro to Data Science course at Lehigh University. I discussed the steps involved in doing Industrial IoT data science including: data cleaning, data understanding, feature engineering, SME input, modeling, scoring with class imbalance, and deployment.
+    I gave a guest lecture at Brian Davison's Intro to Data Science course at Lehigh University. I discussed the steps involved in doing Industrial IoT data science including: data cleaning, data understanding, feature engineering, SME input, modeling, scoring with class imbalance, and deployment.
 all_day: false
 authors: []
 date: "2019-04-29T13:10:00Z"

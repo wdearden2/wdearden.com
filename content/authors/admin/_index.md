@@ -1,7 +1,7 @@
 ---
 authors:
 - admin
-bio: Data scientist at Uptake
+bio: Quantitative Researcher at Allston Trading
 education:
   courses:
   - course: MS in Managerial Economics and Strategy
@@ -19,9 +19,9 @@ interests:
 - Industrial IoT
 name: Will Dearden
 organizations:
-- name: Uptake
-  url: "https://www.uptake.com/"
-role: Data Scientist
+- name: Allston Trading
+  url: "https://www.allstontrading.com/"
+role: Quantitative Researcher
 social:
 - icon: envelope
   icon_pack: fas
@@ -37,5 +37,3 @@ user_groups:
 - Researchers
 - Visitors
 ---
-
-Will Dearden is a data scientist at Uptake.
