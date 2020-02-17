@@ -15,8 +15,9 @@ education:
     year: 2013
 email: "wdearden208@gmail.com"
 interests:
-- Market Design
+- High frequency trading
 - Industrial IoT
+- Game theory
 name: Will Dearden
 organizations:
 - name: Allston Trading
