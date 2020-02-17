@@ -1,0 +1,68 @@
+---
+title: 2018 Putnam Problem A2 Exploration in R
+author: Will Dearden
+date: '2020-02-17'
+slug: 2018-putnam-problem-a2-exploration-in-r
+categories: []
+tags:
+  - R
+  - math
+  - Putnam
+image:
+  caption: ''
+  focal_point: ''
+---
+
+
+
+<p>Problem A2 of the <a href="https://kskedlaya.org/putnam-archive/2018.pdf">2018 Putnam Competition</a> states:</p>
+<blockquote>
+<p>Let <span class="math inline">\(S_1, S_2, \dots, S_{2^n-1}\)</span> be the nonempty subsets of <span class="math inline">\(\{1,2,\dots,n\}\)</span> in some order, and let
+<span class="math inline">\(M\)</span> be the <span class="math inline">\((2^n-1) \times (2^n-1)\)</span> matrix whose <span class="math inline">\((i,j)\)</span> entry is
+<span class="math display">\[
+m_{ij} = \begin{cases} 0 &amp; \mbox{if }S_i \cap S_j = \emptyset; \\
+1 &amp; \mbox{otherwise.}
+\end{cases}
+\]</span>
+Calculate the determinant of <span class="math inline">\(M\)</span>.</p>
+</blockquote>
+<p>First thing to note is that we can generate all nonempty subsets of <span class="math inline">\(\{1, 2, \ldots, n\}\)</span> by converting each integer from <span class="math inline">\(1\)</span> to <span class="math inline">\(2^{n} - 1\)</span> to binary. We can then compute set intersection with a bitwise AND.</p>
+<p>In R we can accomplish this with the function:</p>
+<pre class="r"><code>intersects &lt;- function(x, y) as.integer(!all((intToBits(x) &amp; intToBits(y)) == intToBits(0)))
+
+# 5 corresponds to {3, 1}, 1 corresponds to {1}
+intersects(5, 1)</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code> # 4 corresponds to {3}, 3 corresponds to {2, 1}
+intersects(4, 3)</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>So for some <span class="math inline">\(n\)</span> we create the matrix <span class="math inline">\(M\)</span>. The function <code>outer</code> creates a matrix by applying a specified function to each pair for entries in the first two arguments. (Note that the function must be vectorized. See <code>?outer</code> for help.)</p>
+<pre class="r"><code>n &lt;- 3
+N &lt;- 2^n - 1
+
+(X &lt;- outer(1:N, 1:N, Vectorize(intersects)))</code></pre>
+<pre><code>##      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
+## [1,]    1    0    1    0    1    0    1
+## [2,]    0    1    1    0    0    1    1
+## [3,]    1    1    1    0    1    1    1
+## [4,]    0    0    0    1    1    1    1
+## [5,]    1    0    1    1    1    1    1
+## [6,]    0    1    1    1    1    1    1
+## [7,]    1    1    1    1    1    1    1</code></pre>
+<pre class="r"><code>det(X)</code></pre>
+<pre><code>## [1] -1</code></pre>
+<p>Let’s wrap this up in a function</p>
+<pre class="r"><code>m_det &lt;- function(n) {
+    intersects &lt;- function(x, y) as.integer(!all((intToBits(x) &amp; intToBits(y)) == intToBits(0)))
+  
+    N &lt;- 2^n - 1
+    X &lt;- outer(1:N, 1:N, Vectorize(intersects))
+    det(X)
+}
+
+m_det(3)</code></pre>
+<pre><code>## [1] -1</code></pre>
+<p>Now we can apply it to a sequence of numbers:</p>
+<pre class="r"><code>vapply(1:7, m_det, numeric(1))</code></pre>
+<pre><code>## [1]  1 -1 -1 -1 -1 -1 -1</code></pre>
+<p>So the solution is probably <span class="math inline">\(-1\)</span> for all <span class="math inline">\(n &gt; 1\)</span>. The proof is left to the reader of course.</p>
