@@ -145,6 +145,11 @@
     {{ $js_bundle := $js_bundle | resources.Concat "js/academic-bundle-pre.js" | minify }}
     {{ $js_bundle := slice $js_bundle_head $js_bundle | resources.Concat "js/academic.min.js" | fingerprint "md5" }}
     <script src="{{ $js_bundle.RelPermalink }}"></script>
+    
+    <script src="//yihui.name/js/math-code.js"></script>
+    <script async
+    src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
 
   </body>
 </html>

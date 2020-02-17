@@ -1,0 +1,38 @@
+---
+title: 2019 Putnam Problem A1 Exploration in Python
+author: Will Dearden
+date: '2020-02-17'
+slug: 2019-putnam-problem-a1-exploration-in-python
+categories: []
+tags:
+  - math
+  - python
+  - Putnam
+image:
+  caption: ''
+  focal_point: ''
+---
+
+Problem A1 of the [2019 Putnam Competition](https://kskedlaya.org/putnam-archive/2019.pdf) states:
+
+> Determine all possible values of the expression $A^3 + B^3 + C^3 − 3ABC$ where $A$, $B$, and $C$ are nonnegative integers.
+
+In the real test, you can't use a computer. Nevertheless, let's generate some examples in Python. We'll generate all $A$, $B$, $C$ with $10 \geq A \geq B \geq C \geq 0$ and look at all unique values of the expression less than 30.
+
+```{python}
+from collections import defaultdict
+
+values = defaultdict(list)
+
+for A in range(11):
+    for B in range(A+1):
+        for C in range(B+1):
+            value = A**3 + B**3 + C**3 - 3*A*B*C
+            if value < 30:
+                values[value].append((A, B, C))
+
+for key in sorted(values.keys()):
+    print("%s: %s" % (key, values[key]))
+```
+
+The values which don't appear are 3, 6, 12, 15, 21, and 24. So the solution is probably all nonnegative integers not congruent to 3 or 6 (mod 9). The examples also tell us how to generate solutions. For example if $n = 3k+1$ then $(k+1, k, k)$ is a solution. If $n = 3k + 2$ then $(k + 1, k + 1, k)$ is a solution. If $n = 9k$, then $(k + 1, k, k - 1)$ is a solution. I'll leave it to the reader to show that $9k + 3$ and $9k+6$ are impossible to generate.
