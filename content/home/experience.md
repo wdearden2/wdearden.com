@@ -32,7 +32,7 @@ date_format = "Jan 2006"
   company_url = "https://www.uptake.com"
   location = "Chicago, IL"
   date_start = "2017-12-18"
-  date_end = "2017-07-25"
+  date_end = "2019-07-25"
   description = ""
 
 [[experience]]
