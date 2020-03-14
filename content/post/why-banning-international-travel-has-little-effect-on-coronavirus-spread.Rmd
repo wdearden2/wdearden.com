@@ -96,6 +96,8 @@ I should note that even though the peak percent hospitalized here looks small, i
 
 Now I'm going to model international travel. Let's assume that there are two populations of roughly equal size. One has a head start on the other in terms of number of infected. Let's assume it has three times as many asymptomatic people as the US. Each population follows the same dynamics as before but I'll allow for travel between the two populations. Only the Susceptible, Asymptomatic, and Recovered travel. I'll set a parameter $\rho$, which is equal to the percent of people traveling each day. I will try out $\rho = 0.002$ (equivalent to 0.2% of the population taking international travel daily) and $\rho = 0$. 0.2% is roughly the percent of the US taking international travel daily so is a reasonable parameter for this model.
 
+Note that the results of this model will depend on the fact that the disease has already spread somewhat to both populations. If one population doesn't have the disease at all, then of course completely stopping all travel to that country will stop it from getting the disease. This the approach that [Micronesia has taken](https://slate.com/technology/2020/03/micronesia-drastic-coronavirus-travel-ban.html).
+
 The more complicated model is then
 
 \begin{align*} 
