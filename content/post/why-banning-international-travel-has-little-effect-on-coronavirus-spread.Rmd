@@ -90,7 +90,7 @@ ggplot(sahir_dt, aes(x = time, y = value, color = variable)) +
 percent_hospitalized <- sprintf("%1.1f%%", 100*max(sahir_dt[variable == "Hospitalized"]$value))
 ```
 
-I should note that even though the peak percent hospitalized here looks small, it is `r percent_hospitalized`. There are less than a million hospital beds in the US, which is about 0.3% of the population. So even `r percent_hospitalized` requiring hospitalization would result in hospitals because vastly overrun.
+I should note that even though the peak percent hospitalized here looks small, it is `r percent_hospitalized`. There are less than a million hospital beds in the US, which is about 0.3% of the population. So even `r percent_hospitalized` requiring hospitalization would result in hospitals becoming vastly overrun.
 
 ### International Travel
 
