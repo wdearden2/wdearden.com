@@ -1,0 +1,89 @@
+---
+title: Flattening the Curve
+author: Will Dearden
+date: '2020-03-14'
+slug: flattening-the-curve
+categories: []
+tags:
+  - R
+  - coronavirus
+image:
+  caption: ''
+  focal_point: ''
+---
+
+
+
+<p>With the recent spread of COVID-19, I decided to take a look at infectious disease models and how these models generate the <a href="https://www.npr.org/sections/health-shots/2020/03/13/815502262/flattening-a-pandemics-curve-why-staying-home-now-can-save-lives">“Flattening the Curve”</a> plot.</p>
+<div class="figure">
+<img src="/post/2020-03-14-flattening-the-curve_files/flatten-the-curve.jpg" alt="Source: https://www.wired.com/story/whats-social-distancing-flattening-curve-covid-19-questions/" />
+<p class="caption">Source: <a href="https://www.wired.com/story/whats-social-distancing-flattening-curve-covid-19-questions/" class="uri">https://www.wired.com/story/whats-social-distancing-flattening-curve-covid-19-questions/</a></p>
+</div>
+<p>The simplest model of infectious disease spread is the <a href="https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology#The_SIR_model">SIR model</a>. In this model, there are three groups: Susceptible (<span class="math inline">\(S\)</span>), Infected (<span class="math inline">\(I\)</span>), and Recovered (<span class="math inline">\(R\)</span>). The susceptible spread the disease to the infected and the infected eventually recover. The model is governed by three differential equations:</p>
+<p><span class="math display">\[\begin{align*} 
+\frac{dS}{dt} &amp;= -\beta S I \\
+\frac{dI}{dt} &amp;= \beta S I - \gamma I \\
+\frac{dR}{dt} &amp;= \gamma I
+\end{align*}\]</span></p>
+<p>The idea is that the susceptible become infected at a rate proportional to the number of infected people and a parameter <span class="math inline">\(\beta\)</span> and the infected heal at a rate <span class="math inline">\(\gamma\)</span>. So there are two big ways to reduce the number of infected people, we can either reduce <span class="math inline">\(\beta\)</span> or increase <span class="math inline">\(\gamma\)</span>.</p>
+<p>I’m going to start with some example code for solving the SIR model in R from <a href="http://epirecip.es/epicookbook/chapters/sir/r_desolve">here</a> and make a gif of the effect of changing <span class="math inline">\(\beta\)</span>. In this plot I actually vary a parameter called the reproductive rate, or <span class="math inline">\(R_0\)</span>, which is equal to <span class="math inline">\(\beta / \gamma\)</span>. This can roughly be interpreted as the number of people that each infected person infects in the early stages of the disease spread (until herd immunity starts taking effect).</p>
+<pre class="r"><code>library(deSolve)
+library(data.table)
+library(ggplot2)
+library(gganimate)
+
+sir_ode &lt;- function(times, init, parms) {
+    with(as.list(c(parms, init)), {
+        dS &lt;- -beta * S * I
+        dI &lt;- beta * S * I - gamma * I
+        dR &lt;- gamma * I
+        list(c(dS, dI, dR))
+    })
+}
+
+simulate_sir &lt;- function(beta) {
+    infectious_time &lt;- 7
+    us_infected &lt;- 2e4
+    us_population &lt;- 3e11
+    fraction_infected &lt;- us_infected / us_population
+    parms &lt;- c(beta = beta/infectious_time, gamma = 1/infectious_time)
+    init &lt;- c(S = 1-fraction_infected, I = fraction_infected, R = 0)
+    times &lt;- seq(0, 365, length.out = 2001)
+    sir_out &lt;- lsoda(init, times, sir_ode, parms)
+    
+    as.data.frame(sir_out)
+}
+
+betas &lt;- seq(1.3, 3, by = 0.02)
+beta &lt;- as.list(betas)
+names(beta) &lt;- beta
+sir_df_list &lt;- lapply(beta, simulate_sir)
+sir_df &lt;- rbindlist(sir_df_list, idcol = &#39;beta&#39;)
+
+names(sir_df) &lt;- c(&#39;beta&#39;, &#39;time&#39;, &#39;Susceptible&#39;, &#39;Infected&#39;, &#39;Recovered&#39;)
+
+sir_df &lt;- melt(
+    sir_df, 
+    id.vars = c(&#39;beta&#39;, &#39;time&#39;), 
+    measure.vars = c(&#39;Susceptible&#39;, &#39;Infected&#39;, &#39;Recovered&#39;)
+)
+
+ggplot(sir_df, aes(x = time, y = value, color = variable)) +
+    geom_line(lwd = 1.5) +
+    theme_minimal() +
+    theme(text = element_text(size = 15)) +
+    labs(
+        x = &#39;Days&#39;, 
+        y = &#39;Fraction in group&#39;, 
+        color = &#39;Group&#39;, 
+        title = &#39;Reproductive ratio: {current_frame}&#39;
+    ) +
+    transition_manual(
+        factor(beta, levels = rev(betas))
+    )</code></pre>
+<p><img src="/post/2020-03-14-flattening-the-curve_files/figure-html/unnamed-chunk-2-1.gif" /><!-- --></p>
+<p>So we can see a strong effect from changing behavior, especially in the peak number of people infected. Another cool thing about this model is we can estimate the number of people who will eventually get COVID-19 if this model’s dynamics hold.</p>
+<p>To do this we solve for <span class="math display">\[0 = \frac{dR}{dt} = \gamma (\beta S I - \gamma I) = \gamma (\beta S - \gamma) I\]</span></p>
+<p>So the number of infected hits a steady state when <span class="math display">\[S = \frac{\gamma}{\beta} = \frac{1}{R_0}\]</span></p>
+<p>Then the number of recovered is <span class="math display">\[ R = 1 - \frac{1}{R_0}\]</span></p>
+<p>So not only does lowering <span class="math inline">\(R_0\)</span> “flatten the curve” but it also increases the percent of people who completely avoid the disease.</p>
