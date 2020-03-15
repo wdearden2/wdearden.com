@@ -16,7 +16,7 @@ image:
 
 <p>In my <a href="/flattening-the-curve/">previous post</a>, I covered the SIR model and why “social distancing” is so effective at slowing disease spread and reducing healthcare system burden. In this post I’m going to cover another intervention, banning international travel.</p>
 <p>To do this, I’m going to have to extend the SIR model. One of the reasons that the coronavirus spreads so easily is that people can be infectious for several days while still being asymptomatic. So, instead of assuming three states (susceptible, infectious, and recovered), I’m going to assume the disease can follow five states: Susceptible (S), Asymptomatic (A), Hospitalized (H), Isolated (I), and Recovered (R). The Susceptible become infected but Asymptomatic. Then the Asymptomatic eventually become ill; some percent become ill enough to be Hospitalized and the rest become Isolated. The Hospitalized eventually heal enough to be Isolated. And eventually the Isolated become Recovered. I assume that only the Asymptomatic can spread the virus because both the Hospitalized and Isolated are following effective quarantine measures.</p>
-<p>I will get to international travel later, but for now this model will allow us to break up Infected group to more accurately model spread dynamics. This model looks like</p>
+<p>I will get to international travel later, but for now this model will allow us to break down the Infected group to more accurately model spread dynamics. This model looks like</p>
 <p><span class="math display">\[\begin{align*} 
 \frac{dS}{dt} &amp;= -\beta A S \\
 \frac{dA}{dt} &amp;= \beta A S - \kappa A \\
@@ -25,7 +25,46 @@ image:
 \frac{dR}{dt} &amp;= \phi I
 \end{align*}\]</span></p>
 <p>We can interpret <span class="math inline">\(1 / \kappa\)</span> as the average number of days that a person is asymptomatic, <span class="math inline">\(1 / \tau\)</span> as the average number of days hospitalized, <span class="math inline">\(\eta\)</span> as the percent of people who require hospitalization, and <span class="math inline">\(1 / \phi\)</span> as the average length of time in isolation.</p>
-<p>Putting this model in R and solving, we get:</p>
+<p>Here are the parameter values I’m using:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Parameter</th>
+<th align="left">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Reproductive rate (R0)</td>
+<td align="left">2</td>
+</tr>
+<tr class="even">
+<td align="left">Average number of days asymptomatic</td>
+<td align="left">5</td>
+</tr>
+<tr class="odd">
+<td align="left">Average number of days hospitalized</td>
+<td align="left">5</td>
+</tr>
+<tr class="even">
+<td align="left">Percent requiring hospitalization</td>
+<td align="left">20%</td>
+</tr>
+<tr class="odd">
+<td align="left">Average number of days isolated</td>
+<td align="left">14</td>
+</tr>
+<tr class="even">
+<td align="left">Number asymptomatic</td>
+<td align="left">20,000</td>
+</tr>
+<tr class="odd">
+<td align="left">Total population</td>
+<td align="left">300 million</td>
+</tr>
+</tbody>
+</table>
+<p>I’ll gladly take suggestions for more accurate parameter values and I’m working on an interactive version of these plots. Nevertheless, putting this model in R and solving, we get:</p>
 <pre class="r"><code>library(deSolve)
 library(data.table)
 library(ggplot2)
@@ -79,11 +118,11 @@ ggplot(sahir_dt, aes(x = time, y = value, color = variable)) +
     theme_minimal() +
     theme(text = element_text(size = 15)) +
     labs(x = &#39;Days&#39;, y = &#39;Fraction in Group&#39;, color = &#39;Group&#39;)</code></pre>
-<p><img src="/post/why-banning-international-travel-has-little-effect-on-coronavirus-spread_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p><img src="/post/why-banning-international-travel-has-little-effect-on-coronavirus-spread_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>I should note that even though the peak percent hospitalized here looks small, it is 2.8%. There are less than a million hospital beds in the US, which is about 0.3% of the population. So even 2.8% requiring hospitalization would result in hospitals becoming vastly overrun.</p>
 <div id="international-travel" class="section level3">
 <h3>International Travel</h3>
-<p>Now I’m going to model international travel. Let’s assume that there are two populations of roughly equal size. One has a head start on the other in terms of number of infected. Let’s assume it has three times as many asymptomatic people as the US. Each population follows the same dynamics as before but I’ll allow for travel between the two populations. Only the Susceptible, Asymptomatic, and Recovered travel. I’ll set a parameter <span class="math inline">\(\rho\)</span>, which is equal to the percent of people traveling each day. I will try out <span class="math inline">\(\rho = 0.002\)</span> (equivalent to 0.2% of the population taking international travel daily) and <span class="math inline">\(\rho = 0\)</span>. 0.2% is roughly the percent of the US taking international travel daily so is a reasonable parameter for this model.</p>
+<p>Now I’m going to model international travel. Let’s assume that there are two populations of roughly equal size. One has a head start on the other in terms of number of infected. Let’s assume it has five times as many asymptomatic people as the US. So I’m going to assume the same parameters as before except the other population will have 100,000 infected instead of 20,000. Each population follows the same dynamics but I’ll allow for travel between the two populations. Only the Susceptible, Asymptomatic, and Recovered travel. I’ll set a parameter <span class="math inline">\(\rho\)</span>, which is equal to the percent of people traveling each day. I will try out <span class="math inline">\(\rho = 0.002\)</span>, which is roughly the percent of the US taking international travel daily. I will compare this to <span class="math inline">\(\rho = 0\)</span>.</p>
 <p>Note that the results of this model will depend on the fact that the disease has already spread somewhat to both populations. If one population doesn’t have the disease at all, then of course completely stopping all travel to that country will stop it from getting the disease. This is the approach that <a href="https://slate.com/technology/2020/03/micronesia-drastic-coronavirus-travel-ban.html">Micronesia has taken</a>.</p>
 <p>The more complicated model is then</p>
 <p><span class="math display">\[\begin{align*} 
@@ -119,7 +158,7 @@ ggplot(sahir_dt, aes(x = time, y = value, color = variable)) +
 }
 
 simulate_sahir_travel &lt;- function(rho) {
-    fraction_asymptomatic_europe &lt;- fraction_asymptomatic_us * 3
+    fraction_asymptomatic_europe &lt;- fraction_asymptomatic_us * 5
     
     parms &lt;- c(beta = beta, kappa = kappa, tau = tau, phi = phi, rho = rho)
     init &lt;- c(
@@ -167,7 +206,7 @@ ggplot(sahir_dt, aes(x = time, y = value, color = variable, linetype = travel)) 
         linetype = &#39;Travel&#39;,
         title = &quot;Effect of international travel on COVID-19 spread&quot;
     )</code></pre>
-<p><img src="/post/why-banning-international-travel-has-little-effect-on-coronavirus-spread_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="/post/why-banning-international-travel-has-little-effect-on-coronavirus-spread_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <p>As we can see, there is minimal effect of banning international travel on reducing the spread of COVID-19. The reason is that it has already spread to the United States. Even though other countries have a head start, allowing travel only shifts the trajectory of the disease spread up a few days.</p>
 <p>There is one main drawback to this model: the effect of travel itself. When people fly, they are traveling in close quarters with others, in recycled air, and with reduced immune systems. So the act of travel itself temporarily spikes <span class="math inline">\(\beta\)</span> for those traveling. Nevertheless, this model shows that the most effective way to reduce the spread of the coronavirus is consistent and extended social distancing.</p>
 </div>
