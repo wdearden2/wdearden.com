@@ -89,7 +89,7 @@ ggplot(sir_df, aes(x = time, y = value, color = variable)) +
     )
 ```
 
-So we can see a strong effect from changing behavior, especially in the peak number of people infected. Another cool thing about this model is we can estimate the number of people who will eventually get COVID-19 if this model's dynamics hold.
+So we can see a strong effect from changing behavior, especially in the peak number of people infected. The easiest way to reduce $R_0$ is through washing hands, disinfecting surfaces, and "social distancing" measures such as avoid large crowds and staying at least six feet away from other people. Another cool thing about this model is we can estimate the number of people who will eventually get COVID-19 if this model's dynamics hold.
 
 To do this we solve for $$0 = \frac{dR}{dt} = \gamma (\beta S I - \gamma I) = \gamma (\beta S - \gamma) I$$
 

@@ -82,7 +82,7 @@ ggplot(sir_df, aes(x = time, y = value, color = variable)) +
         factor(beta, levels = rev(betas))
     )</code></pre>
 <p><img src="/post/2020-03-14-flattening-the-curve_files/figure-html/unnamed-chunk-2-1.gif" /><!-- --></p>
-<p>So we can see a strong effect from changing behavior, especially in the peak number of people infected. Another cool thing about this model is we can estimate the number of people who will eventually get COVID-19 if this model’s dynamics hold.</p>
+<p>So we can see a strong effect from changing behavior, especially in the peak number of people infected. The easiest way to reduce <span class="math inline">\(R_0\)</span> is through washing hands, disinfecting surfaces, and “social distancing” measures such as avoid large crowds and staying at least six feet away from other people. Another cool thing about this model is we can estimate the number of people who will eventually get COVID-19 if this model’s dynamics hold.</p>
 <p>To do this we solve for <span class="math display">\[0 = \frac{dR}{dt} = \gamma (\beta S I - \gamma I) = \gamma (\beta S - \gamma) I\]</span></p>
 <p>So the number of infected hits a steady state when <span class="math display">\[S = \frac{\gamma}{\beta} = \frac{1}{R_0}\]</span></p>
 <p>Then the number of recovered is <span class="math display">\[ R = 1 - \frac{1}{R_0}\]</span></p>
