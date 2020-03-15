@@ -60,7 +60,7 @@ simulate_sir <- function(beta) {
     as.data.frame(sir_out)
 }
 
-betas <- seq(1.3, 3, by = 0.02)
+betas <- seq(1, 3, by = 0.02)
 beta <- as.list(betas)
 names(beta) <- beta
 sir_df_list <- lapply(beta, simulate_sir)
