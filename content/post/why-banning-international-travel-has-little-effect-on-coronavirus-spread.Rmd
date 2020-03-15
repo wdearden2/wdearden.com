@@ -213,3 +213,5 @@ ggplot(sahir_dt, aes(x = time, y = value, color = variable, linetype = travel)) 
 The effect of banning international travel is the shift from solid lines to dashed lines, which is minimal. The reason is that it has already spread to the United States. Even though other countries have a head start, allowing travel only shifts the trajectory of the infection spread up a few days.
 
 There is one main drawback to this model: the effect of travel itself. When people fly, they are traveling in close quarters with others, in recycled air, and with reduced immune systems. So the act of travel itself temporarily spikes $\beta$ for those traveling. Nevertheless, this model shows that the most effective way to reduce the spread of the coronavirus is consistent and extended social distancing.
+
+*Huge thanks to my friend [Jonathan Lieberman](https://www.linkedin.com/in/jonathan-lieberman-408254a2/) for several rounds of editing and working with me to fine tune the model.*
