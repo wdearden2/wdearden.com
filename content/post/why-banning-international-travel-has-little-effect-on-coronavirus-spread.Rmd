@@ -47,7 +47,7 @@ assumptions_dt <- data.frame(
 knitr::kable(assumptions_dt)
 ```
 
-I'll gladly take suggestions for more accurate parameter values and I'm working on an interactive version of these plots. Nevertheless, putting this model in R and solving, we get:
+I'll gladly take suggestions for more accurate parameter values and I'm working on an interactive version of these plots. Nevertheless, writing this model in R and solving, we get:
 
 ```{r}
 library(deSolve)
