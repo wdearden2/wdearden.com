@@ -12,9 +12,9 @@ image:
   focal_point: ''
 ---
 
-In my [previous post](/flattening-the-curve/), I covered the SIR model and why "social distancing" is so effective at slowing disease spread and reducing healthcare system burden. In this post I'm going to cover another intervention, banning international travel.
+In my [previous post](/flattening-the-curve/), I covered the SIR model and why "social distancing" is so effective at slowing infection spread and reducing healthcare system burden. In this post I'm going to cover another intervention, banning international travel.
 
-To do this, I'm going to extend the SIR model. One of the reasons that the coronavirus spreads so easily is that people can be contagious for several days before symptoms begin. So, instead of assuming three states (Susceptible, Infectious, and Recovered), I'm going to assume the infection can follow five states: Susceptible (S), Asymptomatic (A), Hospitalized (H), Isolated (I), and Recovered (R). The Susceptible become infected but Asymptomatic. The Asymptomatic eventually become ill; some become ill enough to be Hospitalized and the rest become Isolated. The Hospitalized eventually heal enough to be Isolated. And eventually the Isolated become Recovered. I assume that only the Asymptomatic can spread the virus because both the Hospitalized and Isolated are following effective quarantine measures.
+To do this, I'm going to extend the SIR model. One of the reasons that the coronavirus spreads so easily is that people can be contagious for several days before symptoms begin. So, instead of assuming three states (Susceptible, Infectious, and Recovered), I'm going to assume the infection can follow five states: Susceptible (S), Asymptomatic (A), Hospitalized (H), Isolated (I), and Recovered (R). The Susceptible become infected but Asymptomatic. The Asymptomatic eventually become ill; some become ill enough to be Hospitalized and the rest become Isolated. The Hospitalized eventually heal enough to be Isolated. Eventually the Isolated become Recovered. I assume that only the Asymptomatic can spread the virus because both the Hospitalized and Isolated are following effective quarantine measures.
 
 I will get to international travel later. For now, this model will allow us to break down the Infected group to more accurately model spread dynamics. This model looks like
 
@@ -206,6 +206,6 @@ ggplot(sahir_dt, aes(x = time, y = value, color = variable, linetype = travel)) 
     )
 ```
 
-The effect of banning international travel is the shift from solid lines to dashed lines, which is minimal. The reason is that it has already spread to the United States. Even though other countries have a head start, allowing travel only shifts the trajectory of the disease spread up a few days.
+The effect of banning international travel is the shift from solid lines to dashed lines, which is minimal. The reason is that it has already spread to the United States. Even though other countries have a head start, allowing travel only shifts the trajectory of the infection spread up a few days.
 
 There is one main drawback to this model: the effect of travel itself. When people fly, they are traveling in close quarters with others, in recycled air, and with reduced immune systems. So the act of travel itself temporarily spikes $\beta$ for those traveling. Nevertheless, this model shows that the most effective way to reduce the spread of the coronavirus is consistent and extended social distancing.
