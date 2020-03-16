@@ -12,6 +12,8 @@ image:
   focal_point: ''
 ---
 
+*Edit: a previous version of this post had the US population set as `3e11`, which is 300 billion, instead of `3e8`, which is 300 million. Fixing this shifts the curves to the left but does not change the interpretation of the results. Thank you Peter Farrell for the heads up.*
+
 In my [previous post](/flattening-the-curve/), I covered the SIR model and why "social distancing" is so effective at slowing infection spread and reducing healthcare system burden. In this post I'm going to cover another intervention, banning international travel.
 
 To do this, I'm going to extend the SIR model. One of the reasons that the coronavirus spreads so easily is that people can be contagious for several days before symptoms begin. So, instead of assuming three states (Susceptible, Infectious, and Recovered), I'm going to assume the infection can follow five states: Susceptible (S), Asymptomatic (A), Hospitalized (H), Isolated (I), and Recovered (R). The Susceptible become infected but Asymptomatic. The Asymptomatic eventually become ill; some become ill enough to be Hospitalized and the rest become Isolated. The Hospitalized eventually heal enough to be Isolated. Eventually the Isolated become Recovered. I assume that only the Asymptomatic can spread the virus because both the Hospitalized and Isolated are following effective quarantine measures.
@@ -80,12 +82,12 @@ tau <- 1 / hospitalized_time
 phi <- 1 / isolated_time
 
 us_asymptomatic <- 20000
-us_population <- 3e11
+us_population <- 3e8
 fraction_asymptomatic_us <- us_asymptomatic / us_population
 
 parms <- c(beta = beta, kappa = kappa, eta = eta, tau = tau, phi = phi)
 init <- c(S = 1 - fraction_asymptomatic_us, A = fraction_asymptomatic_us, H = 0, I = 0, R = 0)
-times <- seq(0, 200, length.out = 2000)
+times <- seq(0, 150, length.out = 2000)
 
 sahir_out <- lsoda(init, times, sahir_ode, parms)
 
@@ -167,7 +169,7 @@ simulate_sahir_travel <- function(rho) {
         S1 = 1 - fraction_asymptomatic_us, A1 = fraction_asymptomatic_us, H1 = 0, I1 = 0, R1 = 0,
         S2 = 1 - fraction_asymptomatic_europe, A2 = fraction_asymptomatic_europe, H2 = 0, I2 = 0, R2 = 0
     )
-    times <- seq(0, 200, length.out = 2000)
+    times <- seq(0, 150, length.out = 2000)
     
     sahir_out <- lsoda(init, times, sahir_travel_ode, parms)
     
