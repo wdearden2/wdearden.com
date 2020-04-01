@@ -1,5 +1,5 @@
 ---
-title: Why Banning International Travel has Little Effect on Coronavirus Spread
+title: Limiting Travel Isn't Enough
 author: Will Dearden
 date: '2020-03-14'
 slug: travel-coronavirus
@@ -15,7 +15,7 @@ image:
 
 
 <p><em>Edit: a previous version of this post had the US population set as <code>3e11</code>, which is 300 billion, instead of <code>3e8</code>, which is 300 million. Fixing this shifts the curves to the left but does not change the interpretation of the results. Thank you Peter Farrell for the heads up.</em></p>
-<p>In my <a href="/flattening-the-curve/">previous post</a>, I covered the SIR model and why “social distancing” is so effective at slowing infection spread and reducing healthcare system burden. In this post I’m going to cover another intervention, banning international travel.</p>
+<p>In my <a href="/flattening-the-curve/">previous post</a>, I covered the SIR model and why “social distancing” is so effective at slowing infection spread and reducing healthcare system burden. In this post I’m going to cover another intervention, banning travel.</p>
 <p>To do this, I’m going to extend the SIR model. One of the reasons that the coronavirus spreads so easily is that people can be contagious for several days before symptoms begin. So, instead of assuming three states (Susceptible, Infectious, and Recovered), I’m going to assume the infection can follow five states: Susceptible (S), Asymptomatic (A), Hospitalized (H), Isolated (I), and Recovered (R). The Susceptible become infected but Asymptomatic. The Asymptomatic eventually become ill; some become ill enough to be Hospitalized and the rest become Isolated. The Hospitalized eventually heal enough to be Isolated. Eventually the Isolated become Recovered. I assume that only the Asymptomatic can spread the virus because both the Hospitalized and Isolated are following effective quarantine measures.</p>
 <div class="figure">
 <img src="/post/why-banning-international-travel-has-little-effect-on-coronavirus-spread_files/flow.png" alt="Flow diagram of infection" />
@@ -123,7 +123,7 @@ ggplot(sahir_dt, aes(x = time, y = value, color = variable)) +
     theme_minimal() +
     theme(text = element_text(size = 15)) +
     labs(x = &#39;Days&#39;, y = &#39;Fraction in Group&#39;, color = &#39;Group&#39;)</code></pre>
-<p><img src="/post/why-banning-international-travel-has-little-effect-on-coronavirus-spread_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="/post/limiting-travel-isnt-enough_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>I should note that even though the peak percent hospitalized here looks small, it is 2.8%. There are less than a million hospital beds in the US, which is about 0.3% of the population. So even 2.8% requiring hospitalization would result in hospitals becoming vastly overrun.</p>
 <div id="international-travel" class="section level3">
 <h3>International Travel</h3>
@@ -215,7 +215,7 @@ ggplot(sahir_dt, aes(x = time, y = value, color = variable, linetype = travel)) 
         linetype = &#39;Travel&#39;,
         title = &quot;Effect of international travel on COVID-19 spread&quot;
     )</code></pre>
-<p><img src="/post/why-banning-international-travel-has-little-effect-on-coronavirus-spread_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="/post/limiting-travel-isnt-enough_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <p>The effect of banning international travel is the shift from solid lines to dashed lines, which is minimal. The reason is that it has already spread to the United States. Even though other countries have a head start, allowing travel only shifts the trajectory of the infection spread up a few days.</p>
 <p>There is one main drawback to this model: the effect of travel itself. When people fly, they are traveling in close quarters with others, in recycled air, and with reduced immune systems. So the act of travel itself temporarily spikes <span class="math inline">\(\beta\)</span> for those traveling. Nevertheless, this model shows that the most effective way to reduce the spread of the coronavirus is consistent and extended social distancing.</p>
 <p><em>Huge thanks to my friend <a href="https://www.linkedin.com/in/jonathan-lieberman-408254a2/">Jonathan Lieberman</a> for several rounds of editing and working with me to fine tune the model.</em></p>
