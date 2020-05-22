@@ -108,21 +108,23 @@ fit &lt;- sampling(nonresponse, survey_data)</code></pre>
 <p><img src="/post/survey-nonresponse-stan_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <pre class="r"><code>mcmc_scatter(fit, pars = c(&#39;theta_lower&#39;, &#39;theta_upper&#39;), alpha = 0.1) + theme(text = element_text(size = 18))</code></pre>
 <p><img src="/post/survey-nonresponse-stan_files/figure-html/unnamed-chunk-4-2.png" width="672" /></p>
-<p>Another way to show our posterior is to plot 50 draws from the posterior of our estimated range for <span class="math inline">\(\theta\)</span>. Plus, we’ll show our “point estimate” for the interval in red.</p>
+<p>Another way to show our posterior is to plot 50 draws from the posterior of our estimated range for <span class="math inline">\(\theta\)</span> and for <span class="math inline">\(\theta_{yr}\)</span>. Plus, we’ll show our “point estimate” for the interval in red.</p>
 <pre class="r"><code>num_iter &lt;- 50
-DT &lt;- as.data.table(rstan::extract(fit, c(&#39;theta_lower&#39;, &#39;theta_upper&#39;)))
+DT &lt;- as.data.table(rstan::extract(fit, c(&#39;theta_lower&#39;, &#39;theta_upper&#39;, &#39;theta_yr&#39;)))
 DT &lt;- DT[1:num_iter][, point := FALSE]
 pointDT &lt;- data.table(
     theta_lower = theta_lower_point,
     theta_upper = theta_upper_point,
+    theta_yr = theta_yr_point,
     point = TRUE
 )
 DT &lt;- rbindlist(list(DT, pointDT))
-DT &lt;- DT[order(-(theta_lower + theta_upper) / 2)]
+DT &lt;- DT[order(-theta_yr)]
 DT[, iter := 1:nrow(DT)]
 
-ggplot(DT, aes(xmin = theta_lower, xmax = theta_upper, y = iter, color = point)) +
+ggplot(DT, aes(xmin = theta_lower, xmax = theta_upper, x = theta_yr, y = iter, color = point)) +
     geom_errorbarh() +
+    geom_point(size = 0.8) +
     theme_default() +
     scale_color_manual(values = c(&#39;black&#39;, &#39;red&#39;)) +
     guides(color = FALSE) +

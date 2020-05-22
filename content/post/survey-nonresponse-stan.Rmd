@@ -115,23 +115,25 @@ mcmc_areas(fit, regex_pars = '^theta') + theme(text = element_text(size = 18))
 mcmc_scatter(fit, pars = c('theta_lower', 'theta_upper'), alpha = 0.1) + theme(text = element_text(size = 18))
 ```
 
-Another way to show our posterior is to plot 50 draws from the posterior of our estimated range for $\theta$. Plus, we'll show our "point estimate" for the interval in red.
+Another way to show our posterior is to plot 50 draws from the posterior of our estimated range for $\theta$ and for $\theta_{yr}$. Plus, we'll show our "point estimate" for the interval in red.
 
 ```{r}
 num_iter <- 50
-DT <- as.data.table(rstan::extract(fit, c('theta_lower', 'theta_upper')))
+DT <- as.data.table(rstan::extract(fit, c('theta_lower', 'theta_upper', 'theta_yr')))
 DT <- DT[1:num_iter][, point := FALSE]
 pointDT <- data.table(
     theta_lower = theta_lower_point,
     theta_upper = theta_upper_point,
+    theta_yr = theta_yr_point,
     point = TRUE
 )
 DT <- rbindlist(list(DT, pointDT))
-DT <- DT[order(-(theta_lower + theta_upper) / 2)]
+DT <- DT[order(-theta_yr)]
 DT[, iter := 1:nrow(DT)]
 
-ggplot(DT, aes(xmin = theta_lower, xmax = theta_upper, y = iter, color = point)) +
+ggplot(DT, aes(xmin = theta_lower, xmax = theta_upper, x = theta_yr, y = iter, color = point)) +
     geom_errorbarh() +
+    geom_point(size = 0.8) +
     theme_default() +
     scale_color_manual(values = c('black', 'red')) +
     guides(color = FALSE) +
