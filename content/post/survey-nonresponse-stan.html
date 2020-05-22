@@ -111,7 +111,7 @@ fit &lt;- sampling(nonresponse, survey_data)</code></pre>
 <p>Another way to show our posterior is to plot 50 draws from the posterior of our estimated range for <span class="math inline">\(\theta\)</span> and for <span class="math inline">\(\theta_{yr}\)</span>. Plus, we’ll show our “point estimate” for the interval in red.</p>
 <pre class="r"><code>num_iter &lt;- 50
 DT &lt;- as.data.table(rstan::extract(fit, c(&#39;theta_lower&#39;, &#39;theta_upper&#39;, &#39;theta_yr&#39;)))
-DT &lt;- DT[1:num_iter][, point := FALSE]
+DT &lt;- DT[sample(.N, num_iter)][, point := FALSE]
 pointDT &lt;- data.table(
     theta_lower = theta_lower_point,
     theta_upper = theta_upper_point,
@@ -120,7 +120,7 @@ pointDT &lt;- data.table(
 )
 DT &lt;- rbindlist(list(DT, pointDT))
 DT &lt;- DT[order(-theta_yr)]
-DT[, iter := 1:nrow(DT)]
+DT[, iter := 1:.N]
 
 ggplot(DT, aes(xmin = theta_lower, xmax = theta_upper, x = theta_yr, y = iter, color = point)) +
     geom_errorbarh() +
