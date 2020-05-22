@@ -115,7 +115,7 @@ mcmc_areas(fit, regex_pars = '^theta') + theme(text = element_text(size = 18))
 mcmc_scatter(fit, pars = c('theta_lower', 'theta_upper'), alpha = 0.1) + theme(text = element_text(size = 18))
 ```
 
-Another way to show our posterior is to plot 50 draws from the posterior of $\theta_{yr}$ and the range of $\theta$, i.e. $[\theta_{lower}, \theta_{upper}]$. Plus, we'll show our "point estimate" for the interval in red.
+Another way to show our posterior is to plot 50 draws from the posterior of $\theta_{yr}$ as points and the range of $\theta$, i.e. $[\theta_{lower}, \theta_{upper}]$, as intervals. Plus, we'll show our "point estimate" for the interval in red.
 
 ```{r}
 num_iter <- 50
@@ -142,6 +142,7 @@ ggplot(DT, aes(xmin = theta_lower, xmax = theta_upper, x = theta_yr, y = iter, c
         axis.line.y = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
-        axis.title.y = element_blank()
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank()
     )
 ```

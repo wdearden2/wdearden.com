@@ -108,7 +108,7 @@ fit &lt;- sampling(nonresponse, survey_data)</code></pre>
 <p><img src="/post/survey-nonresponse-stan_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <pre class="r"><code>mcmc_scatter(fit, pars = c(&#39;theta_lower&#39;, &#39;theta_upper&#39;), alpha = 0.1) + theme(text = element_text(size = 18))</code></pre>
 <p><img src="/post/survey-nonresponse-stan_files/figure-html/unnamed-chunk-4-2.png" width="672" /></p>
-<p>Another way to show our posterior is to plot 50 draws from the posterior of <span class="math inline">\(\theta_{yr}\)</span> and the range of <span class="math inline">\(\theta\)</span>, i.e. <span class="math inline">\([\theta_{lower}, \theta_{upper}]\)</span>. Plus, we’ll show our “point estimate” for the interval in red.</p>
+<p>Another way to show our posterior is to plot 50 draws from the posterior of <span class="math inline">\(\theta_{yr}\)</span> as points and the range of <span class="math inline">\(\theta\)</span>, i.e. <span class="math inline">\([\theta_{lower}, \theta_{upper}]\)</span>, as intervals. Plus, we’ll show our “point estimate” for the interval in red.</p>
 <pre class="r"><code>num_iter &lt;- 50
 DT &lt;- as.data.table(rstan::extract(fit, c(&#39;theta_lower&#39;, &#39;theta_upper&#39;, &#39;theta_yr&#39;)))
 DT &lt;- DT[sample(.N, num_iter)][, point := FALSE]
@@ -133,7 +133,8 @@ ggplot(DT, aes(xmin = theta_lower, xmax = theta_upper, x = theta_yr, y = iter, c
         axis.line.y = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank(),
-        axis.title.y = element_blank()
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank()
     )</code></pre>
 <p><img src="/post/survey-nonresponse-stan_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
 </div>
