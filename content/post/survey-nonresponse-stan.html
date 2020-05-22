@@ -72,8 +72,15 @@ generated quantities {
 <p>Since we didn’t specify a prior distribution for <span class="math inline">\(\theta_r\)</span> and <span class="math inline">\(\theta_{yr}\)</span>, Stan automatically chose a uniform distribution.</p>
 <pre class="r"><code>library(rstan)
 library(bayesplot)
-library(ggplot2)</code></pre>
-<pre class="r"><code>survey_data &lt;- list(N = 100, r = 80, y = 60)
+library(ggplot2)
+library(data.table)</code></pre>
+<pre class="r"><code>N &lt;- 100
+r &lt;- 80
+y &lt;- 60
+theta_yr_point &lt;- y/r
+theta_lower_point &lt;- y/N
+theta_upper_point &lt;- y/N + 1 - r/N
+survey_data &lt;- list(N = N, r = r, y = y)
 fit &lt;- sampling(nonresponse, survey_data)</code></pre>
 <pre class="r"><code>fit</code></pre>
 <pre><code>## Inference for Stan model: 3af63e94b6c9efbd0049b265a8a1db73.
@@ -81,11 +88,11 @@ fit &lt;- sampling(nonresponse, survey_data)</code></pre>
 ## post-warmup draws per chain=1000, total post-warmup draws=4000.
 ## 
 ##               mean se_mean   sd    2.5%    25%    50%    75%  97.5% n_eff
-## theta_r       0.79    0.00 0.04    0.71   0.77   0.80   0.82   0.87  3179
-## theta_yr      0.74    0.00 0.05    0.65   0.71   0.74   0.77   0.83  3237
-## theta_lower   0.59    0.00 0.05    0.50   0.56   0.59   0.62   0.68  3461
-## theta_upper   0.80    0.00 0.04    0.72   0.77   0.80   0.82   0.87  3094
-## lp__        -99.51    0.02 1.00 -102.16 -99.88 -99.21 -98.79 -98.53  1790
+## theta_r       0.79    0.00 0.04    0.71   0.77   0.79   0.82   0.87  3085
+## theta_yr      0.74    0.00 0.05    0.65   0.71   0.75   0.78   0.83  2777
+## theta_lower   0.59    0.00 0.05    0.49   0.56   0.59   0.62   0.68  2768
+## theta_upper   0.80    0.00 0.04    0.72   0.77   0.80   0.82   0.87  2820
+## lp__        -99.51    0.02 1.00 -102.23 -99.87 -99.21 -98.79 -98.54  1705
 ##             Rhat
 ## theta_r        1
 ## theta_yr       1
@@ -93,7 +100,7 @@ fit &lt;- sampling(nonresponse, survey_data)</code></pre>
 ## theta_upper    1
 ## lp__           1
 ## 
-## Samples were drawn using NUTS(diag_e) at Fri May 22 12:44:10 2020.
+## Samples were drawn using NUTS(diag_e) at Fri May 22 14:11:27 2020.
 ## For each parameter, n_eff is a crude measure of effective sample size,
 ## and Rhat is the potential scale reduction factor on split chains (at 
 ## convergence, Rhat=1).</code></pre>
@@ -101,4 +108,30 @@ fit &lt;- sampling(nonresponse, survey_data)</code></pre>
 <p><img src="/post/survey-nonresponse-stan_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <pre class="r"><code>mcmc_scatter(fit, pars = c(&#39;theta_lower&#39;, &#39;theta_upper&#39;), alpha = 0.1) + theme(text = element_text(size = 18))</code></pre>
 <p><img src="/post/survey-nonresponse-stan_files/figure-html/unnamed-chunk-4-2.png" width="672" /></p>
+<p>Another way to show our posterior is to plot 50 draws from the posterior of our estimated range for <span class="math inline">\(\theta\)</span>. Plus, we’ll show our “point estimate” for the interval in red.</p>
+<pre class="r"><code>num_iter &lt;- 50
+DT &lt;- as.data.table(rstan::extract(fit, c(&#39;theta_lower&#39;, &#39;theta_upper&#39;)))
+DT &lt;- DT[1:num_iter][, point := FALSE]
+pointDT &lt;- data.table(
+    theta_lower = theta_lower_point,
+    theta_upper = theta_upper_point,
+    point = TRUE
+)
+DT &lt;- rbindlist(list(DT, pointDT))
+DT &lt;- DT[order(-(theta_lower + theta_upper) / 2)]
+DT[, iter := 1:nrow(DT)]
+
+ggplot(DT, aes(xmin = theta_lower, xmax = theta_upper, y = iter, color = point)) +
+    geom_errorbarh() +
+    theme_default() +
+    scale_color_manual(values = c(&#39;black&#39;, &#39;red&#39;)) +
+    guides(color = FALSE) +
+    theme(
+        text = element_text(size = 18),
+        axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank()
+    )</code></pre>
+<p><img src="/post/survey-nonresponse-stan_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
 </div>

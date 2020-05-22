@@ -60,7 +60,7 @@ y|\theta_{yr} &\sim Binomial(r, \theta_{yr}) \\
 
 The nice thing about Stan is that this mathematical model translates directly to Stan code.
 
-```{stan, output.var="nonresponse"}
+```{stan, output.var="nonresponse", cache=TRUE}
 data {
   int<lower=0> N;
   int<lower=0,upper=N> r;
@@ -91,10 +91,17 @@ Since we didn't specify a prior distribution for $\theta_r$ and $\theta_{yr}$, S
 library(rstan)
 library(bayesplot)
 library(ggplot2)
+library(data.table)
 ```
 
 ```{r nonresponse, cache=TRUE, message=FALSE, results='hide'}
-survey_data <- list(N = 100, r = 80, y = 60)
+N <- 100
+r <- 80
+y <- 60
+theta_yr_point <- y/r
+theta_lower_point <- y/N
+theta_upper_point <- y/N + 1 - r/N
+survey_data <- list(N = N, r = r, y = y)
 fit <- sampling(nonresponse, survey_data)
 ```
 
@@ -106,4 +113,33 @@ fit
 mcmc_areas(fit, regex_pars = '^theta') + theme(text = element_text(size = 18))
 
 mcmc_scatter(fit, pars = c('theta_lower', 'theta_upper'), alpha = 0.1) + theme(text = element_text(size = 18))
+```
+
+Another way to show our posterior is to plot 50 draws from the posterior of our estimated range for $\theta$. Plus, we'll show our "point estimate" for the interval in red.
+
+```{r}
+num_iter <- 50
+DT <- as.data.table(rstan::extract(fit, c('theta_lower', 'theta_upper')))
+DT <- DT[1:num_iter][, point := FALSE]
+pointDT <- data.table(
+    theta_lower = theta_lower_point,
+    theta_upper = theta_upper_point,
+    point = TRUE
+)
+DT <- rbindlist(list(DT, pointDT))
+DT <- DT[order(-(theta_lower + theta_upper) / 2)]
+DT[, iter := 1:nrow(DT)]
+
+ggplot(DT, aes(xmin = theta_lower, xmax = theta_upper, y = iter, color = point)) +
+    geom_errorbarh() +
+    theme_default() +
+    scale_color_manual(values = c('black', 'red')) +
+    guides(color = FALSE) +
+    theme(
+        text = element_text(size = 18),
+        axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank()
+    )
 ```
