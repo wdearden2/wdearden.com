@@ -2,3 +2,5 @@ blogdown
 public
 .Rproj.user
 .DS_Store
+.Rhistory
+.hugo_build.lock
