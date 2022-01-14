@@ -1,0 +1,133 @@
+---
+title: Fast Aribtrage Detection Using Linear Programming
+author: Will Dearden
+date: '2022-01-06'
+slug: fast-arbitrage
+categories: []
+tags:
+  - R
+  - math
+image:
+  caption: ''
+  focal_point: ''
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<p>Linear programming has been used <a href="https://mattmcd.github.io/2013/03/30/FX-Arbitrage-CLP.html">many</a> <a href="https://www.meiss.com/columbia/en/teaching/1999/fall/B6015/download/lecture05/lec5.pdf">times</a> <a href="https://sites.math.washington.edu/~burke/crs/408f/models/arb-sol.pdf">before</a> to detect arbitrage in FX trading. However, to use in live trading these solutions require solving a linear program after each price update. So I ask a different question: for each pair, what is the minimum exchange rate such that an arbitrage exists? This way, if the exchange rate updates for a pair, all we have to do is compare the new exchange rate to the minimum exchange rate for an arbitrage to exist. If it’s greater, then we can immediately send orders to arbitrage exchange rates without having to solve a linear program.</p>
+<p>In this post, I will diagram how to set up arbitrage detection as a network flow problem, show how to express it as a linear program using <a href="https://cvxr.rbind.io/">CVXR</a>, and demonstrate my approach for faster trading on arbitrage opportunities.</p>
+<p>We can formulate it as a linear program by maximum log returns while flowing around a cycle. So, for each edge, we require the weight to be between 0 and 1. And we require flow in and out of each node to equal. This problem is:</p>
+<p><span class="math display">\[\begin{aligned} 
+\textrm{max}_{w}   \quad &amp; \sum_{i, j} w_{i,j} \log r_{i,j} \\
+\textrm{s.t.}\quad &amp; \sum_i w_{i,k} = \sum_j w_{j,k} \; \forall k \\
+&amp; 0 \leq w \leq 1
+\end{aligned}\]</span></p>
+<p>We can then express this problem in CVXR.</p>
+<pre class="r"><code>library(CVXR)
+
+n &lt;- 3
+R &lt;- matrix(c(
+    1, 2.5, 8,
+    0.4, 1, 4,
+    0.125, 0.25, 1
+), nrow = n, byrow = TRUE)
+r &lt;- as.vector(R)
+c &lt;- log(r)
+k &lt;- n^2
+
+generate_A &lt;- function(i) {
+    B &lt;- matrix(0, nrow = n, ncol = n)
+    B[1:n, i] &lt;- 1
+    B[i, 1:n] &lt;- -1
+    diag(B) &lt;- 0
+    as.vector(B)
+}
+
+A &lt;- t(vapply(1:n, generate_A, numeric(n^2)))
+k &lt;- n * (n - 1)
+to_keep &lt;- c != 0
+A &lt;- A[, to_keep]
+c &lt;- c[to_keep]
+
+x &lt;- Variable(k, integer = TRUE)# can add &quot;integer = TRUE&quot; to arguments
+objective_p &lt;- Maximize(t(c) %*% x)
+constraints_p &lt;- list(
+    x &gt;= 0,
+    x &lt;= 1,
+    A %*% x == 0
+)
+problem_p &lt;- Problem(objective_p, constraints_p)
+
+result_p &lt;- solve(problem_p)
+
+round(result_p$getValue(x), digits = 3)</code></pre>
+<pre><code>##      [,1]
+## [1,]    0
+## [2,]    1
+## [3,]    1
+## [4,]    0
+## [5,]    0
+## [6,]    1</code></pre>
+<pre class="r"><code>round(result_p$value, 3)</code></pre>
+<pre><code>## [1] 0.223</code></pre>
+<pre class="r"><code>round(exp(result_p$value), 3) - 1</code></pre>
+<pre><code>## [1] 0.25</code></pre>
+<p>This solution tells us that we would get a 25% return by exchanging X for Y for Z for X.</p>
+<p>Now let’s look at the fast update version of this problem. Let <span class="math inline">\(i^{*}\)</span> and <span class="math inline">\(j^{*}\)</span> be the currency you’re trading and fix <span class="math inline">\(w_{i^{*}, j^{*}} = 1\)</span>. Then the linear program is:</p>
+<p><span class="math display">\[\begin{aligned} 
+\textrm{min}_{r_{i^{*}, j^{*}}, w}   \quad &amp; r_{i^{*}, j^{*}} \\
+\textrm{s.t.}\quad &amp; \sum_{i, j} w_{i,j} \log r_{i,j} = 0 \\
+&amp; \sum_i w_{i,k} = \sum_j w_{j,k} \; \forall k \\
+&amp; 0 \leq w \leq 1
+\end{aligned}\]</span></p>
+<p>One way to interpret this is: exchange 1 unit of currency <span class="math inline">\(i^{*}\)</span> for currency <span class="math inline">\(j^{*}\)</span>. Then ask what is the minimum exchange rate such that you’re able to get back exactly that 1 unit. Then for any greater exchange rate, an arbitrage exists.</p>
+<pre class="r"><code>n &lt;- 3
+R &lt;- matrix(c(
+    1, 1.9, 7.9,
+    0.4, 1, 4,
+    0.125, 0.21, 1
+), nrow = n, byrow = TRUE)
+
+istar &lt;- 1
+jstar &lt;- 2
+
+A &lt;- t(vapply(1:n, generate_A, numeric(n^2)))
+index &lt;- (istar - 1) * n + (jstar - 1) + 1
+A &lt;- A[, -index]
+
+r &lt;- as.vector(t(R))
+c &lt;- log(r)
+c &lt;- c[-index]
+
+k &lt;- n * (n - 1)
+to_keep &lt;- c != 0
+A &lt;- A[, to_keep]
+c &lt;- c[to_keep]
+
+w &lt;- Variable(k - 1)
+x &lt;- Variable()
+z &lt;- rep(0, n)
+z[istar] &lt;- 1
+z[jstar] &lt;- -1
+
+objective &lt;- Minimize(x)
+constraints &lt;- list(
+    x + t(c) %*% w == 0,
+    w &gt;= 0,
+    w &lt;= 1,
+    A %*% w + z == 0
+)
+problem &lt;- Problem(objective, constraints)
+result &lt;- solve(problem)
+
+round(result$getValue(w), 3)</code></pre>
+<pre><code>##      [,1]
+## [1,]    0
+## [2,]    0
+## [3,]    1
+## [4,]    1
+## [5,]    0</code></pre>
+<pre class="r"><code>round(exp(result$getValue(x)), 3)</code></pre>
+<pre><code>## [1] 2</code></pre>
+<p>This says that we would have arbitrage opportunity if the exchange rate is at least 2.</p>

@@ -1,0 +1,134 @@
+---
+title: Fast Aribtrage Detection Using Linear Programming
+author: Will Dearden
+date: '2022-01-06'
+slug: fast-arbitrage
+categories: []
+tags:
+  - R
+  - math
+image:
+  caption: ''
+  focal_point: ''
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+Linear programming has been used [many](https://mattmcd.github.io/2013/03/30/FX-Arbitrage-CLP.html) [times](https://www.meiss.com/columbia/en/teaching/1999/fall/B6015/download/lecture05/lec5.pdf) [before](https://sites.math.washington.edu/~burke/crs/408f/models/arb-sol.pdf) to detect arbitrage in FX trading. However, to use in live trading these solutions require solving a linear program after each price update. So I ask a different question: for each pair, what is the minimum exchange rate such that an arbitrage exists? This way, if the exchange rate updates for a pair, all we have to do is compare the new exchange rate to the minimum exchange rate for an arbitrage to exist. If it's greater, then we can immediately send orders to arbitrage exchange rates without having to solve a linear program.
+
+In this post, I will diagram how to set up arbitrage detection as a network flow problem, show how to express it as a linear program using [CVXR](https://cvxr.rbind.io/), and demonstrate my approach for faster trading on arbitrage opportunities.
+
+We can formulate it as a linear program by maximum log returns while flowing around a cycle. So, for each edge, we require the weight to be between 0 and 1. And we require flow in and out of each node to equal. This problem is:
+
+$$\begin{aligned} 
+\textrm{max}_{w}   \quad & \sum_{i, j} w_{i,j} \log r_{i,j} \\
+\textrm{s.t.}\quad & \sum_i w_{i,k} = \sum_j w_{j,k} \; \forall k \\
+& 0 \leq w \leq 1
+\end{aligned}$$
+
+We can then express this problem in CVXR.
+
+```{r}
+library(CVXR)
+
+n <- 3
+R <- matrix(c(
+    1, 2.5, 8,
+    0.4, 1, 4,
+    0.125, 0.25, 1
+), nrow = n, byrow = TRUE)
+r <- as.vector(R)
+c <- log(r)
+k <- n^2
+
+generate_A <- function(i) {
+    B <- matrix(0, nrow = n, ncol = n)
+    B[1:n, i] <- 1
+    B[i, 1:n] <- -1
+    diag(B) <- 0
+    as.vector(B)
+}
+
+A <- t(vapply(1:n, generate_A, numeric(n^2)))
+k <- n * (n - 1)
+to_keep <- c != 0
+A <- A[, to_keep]
+c <- c[to_keep]
+
+x <- Variable(k, integer = TRUE)# can add "integer = TRUE" to arguments
+objective_p <- Maximize(t(c) %*% x)
+constraints_p <- list(
+    x >= 0,
+    x <= 1,
+    A %*% x == 0
+)
+problem_p <- Problem(objective_p, constraints_p)
+
+result_p <- solve(problem_p)
+
+round(result_p$getValue(x), digits = 3)
+round(result_p$value, 3)
+round(exp(result_p$value), 3) - 1
+```
+
+This solution tells us that we would get a `r round(100 * (exp(result_p$value) - 1))`% return by exchanging X for Y for Z for X.
+
+Now let's look at the fast update version of this problem. Let $i^{*}$ and $j^{*}$ be the currency you're trading and fix $w_{i^{*}, j^{*}} = 1$. Then the linear program is:
+
+$$\begin{aligned} 
+\textrm{min}_{r_{i^{*}, j^{*}}, w}   \quad & r_{i^{*}, j^{*}} \\
+\textrm{s.t.}\quad & \sum_{i, j} w_{i,j} \log r_{i,j} = 0 \\
+& \sum_i w_{i,k} = \sum_j w_{j,k} \; \forall k \\
+& 0 \leq w \leq 1
+\end{aligned}$$
+
+One way to interpret this is: exchange 1 unit of currency $i^{*}$ for currency $j^{*}$. Then ask what is the minimum exchange rate such that you're able to get back exactly that 1 unit. Then for any greater exchange rate, an arbitrage exists.
+
+
+```{r}
+n <- 3
+R <- matrix(c(
+    1, 1.9, 7.9,
+    0.4, 1, 4,
+    0.125, 0.21, 1
+), nrow = n, byrow = TRUE)
+
+istar <- 1
+jstar <- 2
+
+A <- t(vapply(1:n, generate_A, numeric(n^2)))
+index <- (istar - 1) * n + (jstar - 1) + 1
+A <- A[, -index]
+
+r <- as.vector(t(R))
+c <- log(r)
+c <- c[-index]
+
+k <- n * (n - 1)
+to_keep <- c != 0
+A <- A[, to_keep]
+c <- c[to_keep]
+
+w <- Variable(k - 1)
+x <- Variable()
+z <- rep(0, n)
+z[istar] <- 1
+z[jstar] <- -1
+
+objective <- Minimize(x)
+constraints <- list(
+    x + t(c) %*% w == 0,
+    w >= 0,
+    w <= 1,
+    A %*% w + z == 0
+)
+problem <- Problem(objective, constraints)
+result <- solve(problem)
+
+round(result$getValue(w), 3)
+round(exp(result$getValue(x)), 3)
+```
+
+This says that we would have arbitrage opportunity if the exchange rate is at least `r round(exp(result$getValue(x)), 3)`.
